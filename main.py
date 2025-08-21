@@ -11,7 +11,7 @@ from discord.ext import commands
 # Charger les variables depuis .env
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-CHANNEL_ID = int(os.getenv("CHANNEL_ID"))  # ⚡️ cast en int car c'est un nombre
+CHANNEL_ID = 1407496727375642644 # ⚡️ cast en int car c'est un nombre
 
 SESSION_FILE = "storage_state.json"
 
@@ -125,4 +125,5 @@ def run_flask():
 if __name__ == "__main__":
     ensure_session()
     threading.Thread(target=run_flask, daemon=True).start()
+
     bot.run(DISCORD_TOKEN)
