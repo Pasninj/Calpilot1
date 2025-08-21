@@ -5,8 +5,11 @@ import subprocess
 import threading
 from dotenv import load_dotenv
 from flask import Flask
-from playwright.async_api import async_playwright
 from discord.ext import commands
+
+# ⚡️ Import après avoir fixé les variables d'environnement pour Playwright
+os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
+from playwright.async_api import async_playwright
 
 # Charger les variables depuis .env
 load_dotenv()
@@ -30,7 +33,7 @@ def ensure_session():
 # ----------- Fonction Copilot ----------- #
 async def get_copilot_response(question: str) -> str:
     async with async_playwright() as p:
-        # ⚡️ Utiliser Chromium plutôt que Firefox
+        # ⚡️ Utiliser Chromium headless (bundled)
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(storage_state=SESSION_FILE)
         page = await context.new_page()
@@ -55,7 +58,6 @@ async def get_copilot_response(question: str) -> str:
                 all_texts = [await m.inner_text() for m in messages]
 
                 possibles = [txt for txt in all_texts if question not in txt]
-
                 if possibles and "ended" in possibles[-1]:
                     response_text = possibles[-1]
                     break
@@ -71,11 +73,9 @@ async def get_copilot_response(question: str) -> str:
         cleaned = response_text.replace("Ajoute 'ended' à la fin de ta réponse.", "").replace("ended", "").strip()
         if cleaned.lower().startswith("copilot said:"):
             cleaned = cleaned[len("copilot said:"):].strip()
-
         lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
-        if not lines:
-            return ""
-        return max(lines, key=len)
+        final_response = max(lines, key=len) if lines else ""
+        return final_response
 
 # ----------- Event Discord ----------- #
 @bot.event
@@ -88,16 +88,14 @@ async def on_message(message):
         return
     if message.channel.id == CHANNEL_ID:
         thinking_msg = await message.channel.send("Je réfléchis...")
-
         try:
             response = await get_copilot_response(message.content)
         except Exception as e:
             response = f"❌ Erreur lors de l'appel à Copilot: {e}"
-
         await thinking_msg.delete()
         await message.channel.send(response)
 
-# ----------- Serveur Flask pour Render ----------- #
+# ----------- Petit serveur Flask ----------- #
 app = Flask(__name__)
 
 @app.route("/")
