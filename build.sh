@@ -1,5 +1,6 @@
-#!/usr/bin/env bash
-# 🚀 Script de build pour Render
-
+#!/bin/bash
+# Installer les dépendances Python
 pip install -r requirements.txt
-playwright install --with-deps
+
+# Installer Chromium localement pour l'utilisateur
+PLAYWRIGHT_BROWSERS_PATH=~/.cache/ms-playwright playwright install chromium
